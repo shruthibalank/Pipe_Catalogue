@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipe Catalogue</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f9fc;
+      color: #000;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .form-section, .catalogue-section {
+      flex: 1;
+      max-width: 500px;
+    }
+    h1, h2 {
+      color: #003366;
+    }
+    h2 {
+      border-bottom: 2px solid #003366;
+      padding-bottom: 5px;
+    }
+    input, button, .dropdown-item {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #043258;
+      color: rgb(169, 178, 204);
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background-color: #003f7f;
+    }
+    .dropdown {
+      border: 1px solid #ccc;
+      max-height: 150px;
+      overflow-y: auto;
+      border-radius: 4px;
+      background-color: #fff;
+      position: absolute;
+      z-index: 999;
+    }
+    .dropdown-item {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .dropdown-item:hover {
+      background-color: #eee;
+    }
+    .catalogue-entry {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #e6f0ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pipe Catalogue</h1>
+  <div class="container">
+    <div class="form-section">
+      <h2>Add Pipe</h2>
+      <input type="text" id="pipeName" placeholder="Type pipe name..." autocomplete="off" />
+      <div id="dropdown" class="dropdown" style="display:none;"></div>
+      <input type="text" id="rate" placeholder="Rate" readonly />
+      <input type="text" id="diameter" placeholder="Diameter" readonly />
+      <input type="text" id="pressure" placeholder="Pressure" readonly />
+      <button id="addPipeBtn">Enter</button>
+    </div>
+    <div class="catalogue-section">
+      <h2>Catalogue</h2>
+      <div id="catalogue"></div>
+    </div>
+  </div>
+
+  <script>
+    const pipeData = [
+      { name: "100 DI K7CL", rate: 1230, diameter: 100, pressure: 80 },
+      { name: "100 DI K9CL", rate: 1366, diameter: 100, pressure: 640 },
+      { name: "150 DI K9CL", rate: 1696, diameter: 150, pressure: 80 },
+      { name: "200 DI K7CL", rate: 2182, diameter: 200, pressure: 80 },
+      { name: "200 DI K9CL", rate: 2568, diameter: 200, pressure: 620 },
+      { name: "250 DI K7CL", rate: 2829, diameter: 250, pressure: 80 },
+      { name: "250 DI K9CL", rate: 3340, diameter: 250, pressure: 540 },
+      { name: "300 DI K7CL", rate: 3536, diameter: 300, pressure: 80 },
+      { name: "300 DI K9CL", rate: 4184, diameter: 300, pressure: 490 },
+      { name: "350 DI K7CL", rate: 4334, diameter: 350, pressure: 80 },
+      { name: "350 DI K9CL", rate: 5097, diameter: 350, pressure: 450 },
+      { name: "400 DI K7CL", rate: 5167, diameter: 400, pressure: 80 },
+      { name: "400 DI K9CL", rate: 6080, diameter: 400, pressure: 420 },
+      { name: "450 DI K7CL", rate: 6119, diameter: 450, pressure: 80 },
+      { name: "450 DI K9CL", rate: 7311, diameter: 450, pressure: 400 },
+      { name: "500 DI K7CL", rate: 7184, diameter: 500, pressure: 80 },
+      { name: "500 DI K9CL", rate: 8442, diameter: 500, pressure: 380 },
+      { name: "600 DI K7CL", rate: 9410, diameter: 600, pressure: 80 },
+      { name: "600 DI K9CL", rate: 11113, diameter: 600, pressure: 360 },
+      { name: "700 DI K7CL", rate: 12242, diameter: 700, pressure: 80 },
+      { name: "700 DI K9CL", rate: 13660, diameter: 700, pressure: 340 },
+      { name: "750 DI K7CL", rate: 13993, diameter: 750, pressure: 80 },
+      { name: "750 DI K9CL", rate: 15285, diameter: 750, pressure: 330 },
+      { name: "800 DI K7CL", rate: 15669, diameter: 800, pressure: 100 },
+      { name: "800 DI K9CL", rate: 16971, diameter: 800, pressure: 320 },
+      { name: "900 DI K7CL", rate: 19036, diameter: 900, pressure: 100 },
+      { name: "900 DI K9CL", rate: 20533, diameter: 900, pressure: 310 },
+      { name: "1000 DI K7CL", rate: 23715, diameter: 1000, pressure: 100 },
+      { name: "1000 DI K9CL", rate: 24608, diameter: 1000, pressure: 300 },
+    ];
+
+    const pipeNameInput = document.getElementById('pipeName');
+    const dropdown = document.getElementById('dropdown');
+    const rateInput = document.getElementById('rate');
+    const diameterInput = document.getElementById('diameter');
+    const pressureInput = document.getElementById('pressure');
+    const catalogue = document.getElementById('catalogue');
+    const addPipeBtn = document.getElementById('addPipeBtn');
+
+    let selectedPipe = null;
+
+    pipeNameInput.addEventListener('input', () => {
+      const query = pipeNameInput.value.toLowerCase();
+      dropdown.innerHTML = '';
+      if (query.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      const matches = pipeData.filter(pipe => pipe.name.toLowerCase().includes(query));
+      if (matches.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      matches.forEach(pipe => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = pipe.name;
+        div.onclick = () => {
+          pipeNameInput.value = pipe.name;
+          rateInput.value = pipe.rate;
+          diameterInput.value = pipe.diameter;
+          pressureInput.value = pipe.pressure;
+          selectedPipe = pipe;
+          dropdown.innerHTML = '';
+          dropdown.style.display = 'none';
+        };
+        dropdown.appendChild(div);
+      });
+      dropdown.style.display = 'block';
+    });
+
+    function addToCatalogue() {
+      if (selectedPipe) {
+        const div = document.createElement('div');
+        div.className = 'catalogue-entry';
+        div.innerHTML = `<strong>${selectedPipe.name}</strong><br>Rate: ${selectedPipe.rate}<br>Diameter: ${selectedPipe.diameter}<br>Pressure: ${selectedPipe.pressure}`;
+        catalogue.appendChild(div);
+
+        pipeNameInput.value = '';
+        rateInput.value = '';
+        diameterInput.value = '';
+        pressureInput.value = '';
+        selectedPipe = null;
+      }
+    }
+
+    pipeNameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addToCatalogue();
+    });
+    addPipeBtn.addEventListener('click', addToCatalogue);
+  </script>
+</body>
+</html>
